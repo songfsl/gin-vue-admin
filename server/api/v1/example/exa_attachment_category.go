@@ -3,20 +3,24 @@ package example
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	common "github.com/flipped-aurora/gin-vue-admin/server/model/common/request"
+
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/example"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
+type GetById struct {
+	ID int `json:"id" form:"id"`
+}
 type AttachmentCategoryApi struct{}
 
-// GetCategoryList
-// @Tags      GetCategoryList
-// @Summary   媒体库分类列表
+// @Tags      AttachmentCategory
+// @Summary   获取媒体库分类列表
 // @Security  AttachmentCategory
 // @Produce   application/json
-// @Success   200   {object}  response.Response{data=example.ExaAttachmentCategory,msg=string}  "媒体库分类列表"
+// @Success   200 {object} response.Response "操作成功"
+// @Failure   400 {object} response.Response "参数错误"
 // @Router    /attachmentCategory/getCategoryList [get]
 func (a *AttachmentCategoryApi) GetCategoryList(c *gin.Context) {
 	res, err := attachmentCategoryService.GetCategoryList()
@@ -28,13 +32,14 @@ func (a *AttachmentCategoryApi) GetCategoryList(c *gin.Context) {
 	response.OkWithData(res, c)
 }
 
-// AddCategory
-// @Tags      AddCategory
+// @Tags      AttachmentCategory
 // @Summary   添加媒体库分类
 // @Security  AttachmentCategory
-// @accept    application/json
+// @Accept    application/json
 // @Produce   application/json
-// @Param     data  body      example.ExaAttachmentCategory  true  "媒体库分类数据"// @Success   200   {object}  response.Response{msg=string}   "添加媒体库分类"
+// @Param     data body example.ExaAttachmentCategory true "媒体库分类数据"
+// @Success   200 {object} response.Response{msg=string} "添加成功"
+// @Failure   400 {object} response.Response{msg=string} "添加失败"
 // @Router    /attachmentCategory/addCategory [post]
 func (a *AttachmentCategoryApi) AddCategory(c *gin.Context) {
 	var req example.ExaAttachmentCategory
@@ -52,14 +57,16 @@ func (a *AttachmentCategoryApi) AddCategory(c *gin.Context) {
 	response.OkWithMessage("创建/更新成功", c)
 }
 
-// DeleteCategory
-// @Tags      DeleteCategory
-// @Summary   删除分类
+// @Tags      AttachmentCategory
+// @Summary   删除媒体库分类
 // @Security  AttachmentCategory
-// @accept    application/json
+// @Accept    application/json
 // @Produce   application/json
-// @Param     data  body      common.GetById                true  "分类id"
-// @Success   200   {object}  response.Response{msg=string}  "删除分类"
+
+// @Param data body common.GetById true "通过ID获取"
+
+// @Success   200 {object} response.Response{msg=string} "删除成功"
+// @Failure   400 {object} response.Response{msg=string} "删除失败"
 // @Router    /attachmentCategory/deleteCategory [post]
 func (a *AttachmentCategoryApi) DeleteCategory(c *gin.Context) {
 	var req common.GetById

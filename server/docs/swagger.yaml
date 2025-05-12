@@ -675,6 +675,158 @@ definitions:
         description: 栈名
         type: string
     type: object
+  dto.AttributeInfo:
+    properties:
+      attribute_id:
+        type: integer
+      attribute_name:
+        type: string
+      option_id:
+        description: |-
+          Value         *string `json:"value,omitempty"`
+          AttributeID   int     `json:"attribute_id"`
+          AttributeName string  `json:"attribute_name"`
+        type: integer
+      option_value:
+        type: string
+      value_string:
+        type: string
+    type: object
+  dto.ImageInfo:
+    properties:
+      alt_text:
+        type: string
+      id:
+        type: integer
+      url:
+        type: string
+    type: object
+  dto.PriceInfo:
+    properties:
+      amount:
+        type: number
+      formatted_amount:
+        type: string
+      formatted_original_amount:
+        type: string
+      original_amount:
+        type: number
+      type:
+        type: string
+      type_name:
+        type: string
+    type: object
+  dto.ProductInfo:
+    properties:
+      alt_text:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_taxable:
+        type: boolean
+      meta_description:
+        type: string
+      meta_title:
+        type: string
+      name:
+        type: string
+      product_code:
+        type: string
+      target_sku_info:
+        allOf:
+        - $ref: '#/definitions/dto.TargetSKUInfo'
+        description: |-
+          CategoryName    string    `json:"category_name"`
+          // AttributeIDs    int                `json:"attribute_ids"`
+    type: object
+  dto.ProductVariantResponse:
+    properties:
+      product_info:
+        $ref: '#/definitions/dto.ProductInfo'
+      variants:
+        items:
+          $ref: '#/definitions/dto.VariantOptionGroup'
+        type: array
+    type: object
+  dto.ShippingAddressInput:
+    properties:
+      address_line1:
+        maxLength: 255
+        type: string
+      address_line2:
+        maxLength: 255
+        type: string
+      city:
+        maxLength: 100
+        type: string
+      is_default:
+        type: boolean
+      phone_number:
+        maxLength: 20
+        type: string
+      postal_code:
+        maxLength: 10
+        type: string
+      prefecture:
+        maxLength: 50
+        type: string
+      recipient_name:
+        maxLength: 100
+        type: string
+    required:
+    - address_line1
+    - city
+    - phone_number
+    - postal_code
+    - prefecture
+    - recipient_name
+    type: object
+  dto.TargetSKUInfo:
+    properties:
+      attributes:
+        items:
+          $ref: '#/definitions/dto.AttributeInfo'
+        type: array
+      price:
+        $ref: '#/definitions/dto.PriceInfo'
+      primary_image:
+        $ref: '#/definitions/dto.ImageInfo'
+      sku_id:
+        type: string
+    type: object
+  dto.VariantOption:
+    properties:
+      linked_sku_ids:
+        description: |-
+          ImageURL     *string  `json:"image_url,omitempty"`      // Swatch画像等
+          IsSelectable bool     `json:"is_selectable"`            // 在庫等による選択可否
+        items:
+          type: string
+        type: array
+      option_code:
+        type: string
+      option_id:
+        type: integer
+      option_value:
+        type: string
+    type: object
+  dto.VariantOptionGroup:
+    properties:
+      attribute_code:
+        type: string
+      attribute_id:
+        type: integer
+      attribute_name:
+        type: string
+      options:
+        description: DisplayType   string          `json:"display_type"` // 'image',
+          'text', etc.
+        items:
+          $ref: '#/definitions/dto.VariantOption'
+        type: array
+    type: object
   example.ExaAttachmentCategory:
     properties:
       ID:
@@ -1086,6 +1238,15 @@ definitions:
         description: 主键ID
         type: integer
     type: object
+  request.GetLoginTimeByUsersIdReq:
+    properties:
+      ID:
+        type: integer
+      endTime:
+        type: string
+      startTime:
+        type: string
+    type: object
   request.GetUserList:
     properties:
       email:
@@ -1495,6 +1656,9 @@ definitions:
       title:
         description: 菜单名
         type: string
+      transitionType:
+        description: 路由切换动画
+        type: string
     type: object
   system.SysApi:
     properties:
@@ -1897,8 +2061,13 @@ definitions:
       enable:
         description: 用户是否被冻结 1正常 2冻结
         type: integer
+      gender:
+        description: 用户邮箱
+        type: string
       headerImg:
         description: 用户头像
+        type: string
+      nationality:
         type: string
       nickName:
         description: 用户昵称
@@ -1929,7 +2098,7 @@ info:
   contact: {}
   description: 使用gin+vue进行极速开发的全栈开发基础平台
   title: Gin-Vue-Admin Swagger API接口文档
-  version: v2.7.9-beta
+  version: v2.8.1
 paths:
   /api/createApi:
     post:
@@ -2227,6 +2396,486 @@ paths:
       summary: 修改基础api
       tags:
       - SysApi
+  /api/v1/cart:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户的カートSKU信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: カート内容取得
+      tags:
+      - GetCartItems
+  /api/v1/cart/items:
+    post:
+      consumes:
+      - application/json
+      description: '用户将指定 SKU 添加到自己的カート中，调用此接口必须携带 Authorization: Bearer Token'
+      parameters:
+      - description: SKU ID
+        in: query
+        name: sku_id
+        required: true
+        type: string
+      - description: QUANTITY
+        in: query
+        name: quantity
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 添加成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求失败或参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权，Token 无效或缺失
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 添加商品
+      tags:
+      - AddItemsIntoCart
+  /api/v1/cart/items/{sku_id}:
+    delete:
+      consumes:
+      - application/json
+      description: 根据用户的 SKU ID 删除其cart的 SKU
+      parameters:
+      - description: SKU ID
+        in: path
+        name: sku_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功的响应
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 删除失败的响应
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除用户cart的 SKU
+      tags:
+      - DeleteItemsFromCart
+    put:
+      consumes:
+      - application/json
+      description: 'sku_id の商品の数量を、リクエストボディで指定された新しい数量に変更する，调用此接口必须携带 Authorization:
+        Bearer Token'
+      parameters:
+      - description: SKU ID
+        in: query
+        name: sku_id
+        required: true
+        type: string
+      - description: QUANTITY
+        in: query
+        name: quantity
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 变更成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求失败或参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权，Token 无效或缺失
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: カート商品数量変更
+      tags:
+      - ChangeItemsInCart
+  /api/v1/favorites/skus:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户收藏的SKU信息，支持分页与排序
+      parameters:
+      - description: ' 取得するページ番号 (1始まり)'
+        in: query
+        name: page
+        type: integer
+      - description: ' 1ページあたりのレビュー件数'
+        in: query
+        name: limit
+        type: integer
+      - description: ソート順序('newest', 'oldest', のいずれかを指定)
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取用户收藏SKU列表
+      tags:
+      - GetFavouriteSkuList
+  /api/v1/favorites/skus/{sku_id}:
+    delete:
+      consumes:
+      - application/json
+      description: 根据用户的 SKU ID 删除其收藏的 SKU
+      parameters:
+      - description: SKU ID
+        in: path
+        name: sku_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功的响应
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 删除失败的响应
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 删除用户收藏的 SKU
+      tags:
+      - DeleteFavouriteSku
+    post:
+      consumes:
+      - application/json
+      description: '用户将指定 SKU 添加到自己的收藏夹中，调用此接口必须携带 Authorization: Bearer Token'
+      parameters:
+      - description: SKU ID
+        in: path
+        name: sku_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 收藏成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求失败或参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权，Token 无效或缺失
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 添加收藏的SKU
+      tags:
+      - AddFavouriteSku
+  /api/v1/history/viewed-skus/:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户浏览的SKU信息，支持分页与排序
+      parameters:
+      - description: ' 取得するページ番号 (1始まり)'
+        in: query
+        name: page
+        type: integer
+      - description: ' 1ページあたりのレビュー件数'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取用户浏览SKU列表
+      tags:
+      - GetViewedHistory
+  /api/v1/history/viewed-skus/{sku_id}:
+    post:
+      consumes:
+      - application/json
+      description: '用户将指定 SKU 添加到自己的閲覧履歴中，调用此接口必须携带 Authorization: Bearer Token'
+      parameters:
+      - description: SKU ID
+        in: path
+        name: sku_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 添加成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求失败或参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权，Token 无效或缺失
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 添加商品閲覧履歴
+      tags:
+      - AddViewedSkus
+  /api/v1/product/{product_code}/coordinates:
+    get:
+      description: 現在閲覧している商品詳細ページに関連する「コーディネートセットの概要」リストを返す
+      parameters:
+      - description: 商品コード（例：ABC123）
+        in: path
+        name: product_code
+        required: true
+        type: string
+      - default: 4
+        description: 取得件数（1〜10）
+        in: query
+        maximum: 5
+        minimum: 1
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: パラメータ不正、または商品コードが存在しない
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 「コーディネートセットの概要」を取得
+      tags:
+      - GetStaffCoordinate
+  /api/v1/product/{product_code}/related:
+    get:
+      description: 指定された商品コードに基づいて関連商品情報を取得します（最大10件まで）
+      parameters:
+      - description: 商品コード（例：ABC123）
+        in: path
+        name: product_code
+        required: true
+        type: string
+      - default: 5
+        description: 取得件数（1〜10）
+        in: query
+        maximum: 10
+        minimum: 1
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: パラメータ不正、または商品コードが存在しない
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 関連商品を取得
+      tags:
+      - GetRelatedProductAndCategory
+  /api/v1/products/{SkuId}/images:
+    get:
+      parameters:
+      - description: SKU ID
+        in: path
+        name: SkuId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                ' msg':
+                  type: string
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+        "400":
+          description: 不正な商品識別子です。
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                msg:
+                  type: string
+              type: object
+      security:
+      - ApiKeyAuth: []
+      summary: 根据 SKU ID 获取商品图片列表
+      tags:
+      - GetProductImages
+  /api/v1/shipping-addresses:
+    get:
+      consumes:
+      - application/json
+      description: '認証済みユーザーの登録済み全配送先住所リストを取得する。调用此接口必须携带 Authorization: Bearer Token'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 住所リスト取得
+      tags:
+      - GetShippingAddress
+    post:
+      consumes:
+      - application/json
+      description: '用户将指定住所添加到自己的地址簿中，调用此接口必须携带 Authorization: Bearer Token'
+      parameters:
+      - description: 配送先住所信息
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ShippingAddressInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 添加成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求失败或参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权，Token 无效或缺失
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 配送先住所追加
+      tags:
+      - CreateShippingAddress
+  /api/v1/shipping-addresses/{address_id}:
+    delete:
+      consumes:
+      - application/json
+      description: 根据用户的addressid 删除其指定地址
+      parameters:
+      - description: ADDRESS ID
+        in: path
+        name: address_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功的响应
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 删除失败的响应
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 配送先住所削除
+      tags:
+      - DeleteShippingAddress
+    put:
+      consumes:
+      - application/json
+      description: '用户将指定住所編集，调用此接口必须携带 Authorization: Bearer Token'
+      parameters:
+      - description: ADDRESS ID
+        in: path
+        name: address_id
+        required: true
+        type: integer
+      - description: 更改配送先住所信息
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ShippingAddressInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 添加成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求失败或参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权，Token 无效或缺失
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 配送先住所編集
+      tags:
+      - ChangeShippingAddress
   /attachmentCategory/addCategory:
     post:
       consumes:
@@ -2240,28 +2889,18 @@ paths:
           $ref: '#/definitions/example.ExaAttachmentCategory'
       produces:
       - application/json
-      responses: {}
-      security:
-      - AttachmentCategory: []
-      summary: 添加媒体库分类
-      tags:
-      - AddCategory
-  /attachmentCategory/deleteCategory:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: 分类id
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/request.GetById'
-      produces:
-      - application/json
       responses:
         "200":
-          description: 删除分类
+          description: 添加成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                msg:
+                  type: string
+              type: object
+        "400":
+          description: 添加失败
           schema:
             allOf:
             - $ref: '#/definitions/response.Response'
@@ -2271,30 +2910,48 @@ paths:
               type: object
       security:
       - AttachmentCategory: []
-      summary: 删除分类
+      summary: 添加媒体库分类
       tags:
-      - DeleteCategory
+      - AttachmentCategory
+  /attachmentCategory/deleteCategory:
+    post:
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                msg:
+                  type: string
+              type: object
+        "400":
+          description: 删除失败
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                msg:
+                  type: string
+              type: object
   /attachmentCategory/getCategoryList:
     get:
       produces:
       - application/json
       responses:
         "200":
-          description: 媒体库分类列表
+          description: 操作成功
           schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/example.ExaAttachmentCategory'
-                msg:
-                  type: string
-              type: object
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
       security:
       - AttachmentCategory: []
-      summary: 媒体库分类列表
+      summary: 获取媒体库分类列表
       tags:
-      - GetCategoryList
+      - AttachmentCategory
   /authority/copyAuthority:
     post:
       consumes:
@@ -2935,8 +3592,7 @@ paths:
             - $ref: '#/definitions/response.Response'
             - properties:
                 data:
-                  items:
-                    type: object
+                  items: {}
                   type: array
                 msg:
                   type: string
@@ -3360,14 +4016,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: 断点续传到服务器
+          description: OK
           schema:
-            allOf:
-            - $ref: '#/definitions/response.Response'
-            - properties:
-                msg:
-                  type: string
-              type: object
+            $ref: '#/definitions/response.FileResponse'
       security:
       - ApiKeyAuth: []
       summary: 断点续传到服务器
@@ -4148,6 +4799,166 @@ paths:
       summary: 更新菜单
       tags:
       - Menu
+  /productSkus/getTargetProductSkus:
+    get:
+      consumes:
+      - application/json
+      description: 通过skuId和productId获取相关的SKU信息，返回对应的商品SKU数据。
+      parameters:
+      - description: SKU ID
+        in: query
+        name: skuId
+        required: true
+        type: string
+      - description: 商品 ID
+        in: query
+        name: productId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功返回SKU信息
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+                msg:
+                  type: string
+              type: object
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取目标商品的SKU信息（根据skuId和productId）
+      tags:
+      - 商品SKU
+  /productSkus/getUserQandAs:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: ProductCode
+        in: query
+        name: productCode
+        type: string
+      - description: ' 取得するページ番号 (1始まり)'
+        in: query
+        name: page
+        type: integer
+      - description: ' 1ページあたりのレビュー件数'
+        in: query
+        name: limit
+        type: integer
+      - description: ソート順序('newest', 'oldest', 'most_helpful' のいずれかを指定)
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回评论列表和评分概况
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+        "400":
+          description: 参数错误或查询失败
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取指定产品的用户问题以及回答
+      tags:
+      - GetUserQandAs
+  /productSkus/getUserReviews:
+    get:
+      consumes:
+      - application/json
+      description: 根据 productCode 获取该商品的评论评分概况（平均评分、各评分数量等）及评论详情列表，支持分页、评分过滤、排序功能。
+      parameters:
+      - description: ProductCode
+        in: query
+        name: productCode
+        required: true
+        type: string
+      - description: ' 取得するページ番号 (1始まり)'
+        in: query
+        name: page
+        type: integer
+      - description: ' 1ページあたりのレビュー件数'
+        in: query
+        name: limit
+        type: integer
+      - description: ソート順序('newest', 'oldest', 'highest_rating', 'lowest_rating',
+          'most_helpful' のいずれかを指定)
+        in: query
+        name: sort
+        type: string
+      - description: ' 指定した評価（星の数、例: 5）'
+        in: query
+        name: rating
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 返回评论列表和评分概况
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+        "400":
+          description: 参数错误或查询失败
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取指定产品的用户评论信息
+      tags:
+      - GetUserReviews
+  /productSkus/getVariantOptions:
+    get:
+      parameters:
+      - description: 商品ID
+        in: query
+        name: productId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ProductVariantResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取指定商品ID对应的变体选项
+      tags:
+      - ProductSku
   /sysDictionary/createSysDictionary:
     post:
       consumes:
@@ -4525,18 +5336,6 @@ paths:
       summary: 更新SysDictionaryDetail
       tags:
       - SysDictionaryDetail
-  /sysExportTemplate/ExportTemplate:
-    get:
-      consumes:
-      - application/json
-      produces:
-      - application/json
-      responses: {}
-      security:
-      - ApiKeyAuth: []
-      summary: 导出表格模板
-      tags:
-      - SysExportTemplate
   /sysExportTemplate/createSysExportTemplate:
     post:
       consumes:
@@ -4618,6 +5417,42 @@ paths:
       summary: 导出表格
       tags:
       - SysExportTemplate
+  /sysExportTemplate/exportExcelByToken:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      summary: 导出表格
+      tags:
+      - ExportExcelByToken
+  /sysExportTemplate/exportTemplate:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      summary: 导出表格模板
+      tags:
+      - SysExportTemplate
+  /sysExportTemplate/exportTemplateByToken:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - ApiKeyAuth: []
+      summary: 通过token导出表格模板
+      tags:
+      - ExportTemplateByToken
   /sysExportTemplate/findSysExportTemplate:
     get:
       consumes:
@@ -5496,6 +6331,29 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: 删除用户
+      tags:
+      - SysUser
+  /user/getLoginHistoryByIdAndTimeRange:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 用户ID和时间范围
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/request.GetLoginTimeByUsersIdReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取用户登录信息
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取用户登录信息
       tags:
       - SysUser
   /user/getUserInfo:

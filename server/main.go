@@ -2,10 +2,11 @@ package main
 
 import (
 	"github.com/flipped-aurora/gin-vue-admin/server/core"
+	_ "github.com/flipped-aurora/gin-vue-admin/server/docs"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/initialize"
 	_ "go.uber.org/automaxprocs"
-	"go.uber.org/zap"
+	"go.uber.org/zap" // swagger文件
 )
 
 //go:generate go env -w GO111MODULE=on

@@ -17,6 +17,25 @@ import (
 	"go.uber.org/zap"
 )
 
+// @Tags SysUser
+// @Security ApiKeyAuth
+// @Summary 根据用户ID获取登录时间
+// @Description 根据用户ID获取登录时间
+// @Param id query int true "用户ID"
+// @Success 200 {object} response.Response "获取用户登录时间成功"
+// @Failure 400 {object} response.Response "请求参数错误"
+// @Router /user/getLoginTimeByUsersId [get]
+//
+//	func (s *BaseApi) GetLoginTimeByUsersId(c *gin.Context) {
+//		var req systemReq.GetLoginTimeByUsersIdReq
+//		err := c.ShouldBindQuery(&req)
+//		if err != nil {
+//			response.FailWithMessage(err.Error(), c)
+//			return
+//		}
+//	}
+//
+
 // Login
 // @Tags     Base
 // @Summary  用户登录
@@ -481,3 +500,68 @@ func (b *BaseApi) ResetPassword(c *gin.Context) {
 	}
 	response.OkWithMessage("重置成功", c)
 }
+
+// GetLoginHistoryByIdAndTimeRange
+// @Tags            SysUser
+// @Summary     获取用户登录信息
+// @Param         data body systemReq.GetLoginTimeByUsersIdReq true "用户ID和时间范围"
+// @Security    ApiKeyAuth
+// @accept        application/json
+// @Produce     application/json
+// @Success 200 {object} response.Response "获取用户登录信息"
+// @Router        /user/getLoginHistoryByIdAndTimeRange [post]
+func (b *BaseApi) GetLoginHistoryByIdAndTimeRange(c *gin.Context) {
+	var req systemReq.GetLoginTimeByUsersIdReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		global.GVA_LOG.Error("参数绑定失败!", zap.Error(err))
+		response.FailWithMessage("参数错误", c)
+		return
+	}
+
+	var startTime, endTime time.Time
+
+	// startTime, _ := time.Parse("2006-01-02 15:04:05", req.StartTime)
+
+	// endTime, _ := time.Parse("2006-01-02 15:04:05", req.EndTime)
+
+	if req.StartTime != "" {
+		startTime, _ = time.Parse("2006-01-02 15:04:05", req.StartTime)
+	}
+
+	if req.EndTime != "" {
+		endTime, _ = time.Parse("2006-01-02 15:04:05", req.EndTime)
+	}
+
+	// if err1 != nil || err2 != nil {
+	// 	global.GVA_LOG.Error("时间格式错误!", zap.Error(err1), zap.Error(err2))
+	// 	response.FailWithMessage("时间格式不正确，应为 '2006-01-02 15:04:05'", c)
+	// 	return
+	// }
+
+	Req, err := userService.GetLoginHistory(int(req.ID), startTime, endTime)
+	if err != nil {
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败", c)
+		return
+	}
+
+	response.OkWithDetailed(gin.H{"loginHistory": Req}, "获取成功", c)
+}
+
+// func (b *BaseApi) GetTargetProductSkus(c *gin.Context) {
+// 	var req GetSkuReq
+
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		global.GVA_LOG.Error("参数绑定失败!", zap.Error(err))
+// 		response.FailWithMessage("参数错误", c)
+// 		return
+// 	}
+// 	Req, err := ProductSkus.GetTargetProductSkus(req.SkuId, req.ProductId)
+// 	if err != nil {
+// 		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+// 		response.FailWithMessage("获取失败", c)
+// 		return
+// 	}
+
+// 	response.OkWithDetailed(gin.H{"ProductSkus": Req}, "获取成功", c)
+// }

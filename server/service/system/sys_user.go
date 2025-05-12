@@ -3,9 +3,10 @@ package system
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common"
 	systemReq "github.com/flipped-aurora/gin-vue-admin/server/model/system/request"
-	"time"
 
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
@@ -54,6 +55,19 @@ func (userService *UserService) Login(u *system.SysUser) (userInter *system.SysU
 		if ok := utils.BcryptCheck(u.Password, user.Password); !ok {
 			return nil, errors.New("密码错误")
 		}
+
+		// 记录登录历史
+		// 密码验证通过后记录登录时间
+		if global.GVA_DB == nil {
+			fmt.Println("数据库未初始化！")
+			return
+			//数据库连接验证
+		}
+		global.GVA_DB.Create(&system.UserLoginHistory{
+			UserID:   uint64(user.ID),
+			DateTime: time.Now(),
+		})
+
 		MenuServiceApp.UserAuthorityDefaultRouter(&user)
 	}
 	return &user, err
@@ -314,4 +328,38 @@ func (userService *UserService) FindUserByUuid(uuid string) (user *system.SysUse
 func (userService *UserService) ResetPassword(ID uint, password string) (err error) {
 	err = global.GVA_DB.Model(&system.SysUser{}).Where("id = ?", ID).Update("password", utils.BcryptHash(password)).Error
 	return err
+}
+
+func (userService *UserService) GetLoginHistory(id int, startTime, endTime time.Time) (userLoginHistory []system.UserLoginHistory, err error) {
+
+	if id != 0 {
+		if !startTime.IsZero() && !endTime.IsZero() {
+			err = global.GVA_DB.Where("user_id = ? AND login_time BETWEEN ? AND ?", id, startTime, endTime).Find(&userLoginHistory).Error
+		}
+		if !startTime.IsZero() && endTime.IsZero() {
+			err = global.GVA_DB.Where("user_id = ? AND login_time >= ?", id, startTime).Find(&userLoginHistory).Error
+		}
+		if startTime.IsZero() && !endTime.IsZero() {
+			err = global.GVA_DB.Where("user_id = ? AND login_time <= ?", id, endTime).Find(&userLoginHistory).Error
+		}
+		if startTime.IsZero() && endTime.IsZero() {
+			err = global.GVA_DB.Where("user_id = ?", id).Find(&userLoginHistory).Error
+		}
+	} else {
+		if !startTime.IsZero() && !endTime.IsZero() {
+			err = global.GVA_DB.Where("login_time BETWEEN ? AND ?", startTime, endTime).Find(&userLoginHistory).Error
+		}
+		if !startTime.IsZero() && endTime.IsZero() {
+			err = global.GVA_DB.Where("login_time >= ?", startTime).Find(&userLoginHistory).Error
+		}
+		if startTime.IsZero() && !endTime.IsZero() {
+			err = global.GVA_DB.Where("login_time <= ?", endTime).Find(&userLoginHistory).Error
+		}
+		if startTime.IsZero() && endTime.IsZero() {
+			err = global.GVA_DB.Find(&userLoginHistory).Error
+		}
+
+	}
+	return
+
 }

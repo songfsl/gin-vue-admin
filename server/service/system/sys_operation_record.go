@@ -64,6 +64,7 @@ func (operationRecordService *OperationRecordService) GetSysOperationRecord(id u
 //@return: list interface{}, total int64, err error
 
 func (operationRecordService *OperationRecordService) GetSysOperationRecordInfoList(info systemReq.SysOperationRecordSearch) (list interface{}, total int64, err error) {
+	//分页逻辑
 	limit := info.PageSize
 	offset := info.PageSize * (info.Page - 1)
 	// 创建db
@@ -79,10 +80,38 @@ func (operationRecordService *OperationRecordService) GetSysOperationRecordInfoL
 	if info.Status != 0 {
 		db = db.Where("status = ?", info.Status)
 	}
+	//查询总数
 	err = db.Count(&total).Error
 	if err != nil {
 		return
 	}
+	//查数据本体
 	err = db.Order("id desc").Limit(limit).Offset(offset).Preload("User").Find(&sysOperationRecords).Error
 	return sysOperationRecords, total, err
 }
+
+// func (operationRecordService *OperationRecordService) GetUserIdsByLoginTime(info systemReq.UserLoginTimeRange) (list interface{}, total int64, err error) {
+// 	//这个功能用不上分页吧
+// 	// limit := info.PageSize
+// 	// offset := info.PageSize * (info.Page - 1)
+// 	// 创建db查询
+// 	db := global.GVA_DB.Model(&system.UserLoginHistory{})
+// 	var sysOperationRecords []system.UserLoginHistory
+// 	//以下不懂
+// 	// 如果有条件搜索 下方会自动创建搜索语句
+// 	if info.Method != "" {
+// 		db = db.Where("method = ?", info.Method)
+// 	}
+// 	if info.Path != "" {
+// 		db = db.Where("path LIKE ?", "%"+info.Path+"%")
+// 	}
+// 	if info.Status != 0 {
+// 		db = db.Where("status = ?", info.Status)
+// 	}
+// 	err = db.Count(&total).Error
+// 	if err != nil {
+// 		return
+// 	}
+// 	err = db.Order("id desc").Preload("User").Find(&sysOperationRecords).Error
+// 	return sysOperationRecords, total, err
+// }

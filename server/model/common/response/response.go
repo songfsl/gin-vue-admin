@@ -14,7 +14,7 @@ type Response struct {
 
 const (
 	ERROR   = 7
-	SUCCESS = 0
+	SUCCESS = 200
 )
 
 func Result(code int, data interface{}, msg string, c *gin.Context) {
@@ -59,5 +59,22 @@ func NoAuth(message string, c *gin.Context) {
 }
 
 func FailWithDetailed(data interface{}, message string, c *gin.Context) {
+	Result(ERROR, data, message, c)
+}
+
+type Error struct {
+	Code string      `json:"code"`
+	Data interface{} `json:"data"`
+	Msg  string      `json:"msg"`
+}
+
+func FailWithCode(code string, message string, c *gin.Context) {
+	c.JSON(http.StatusNotFound, Error{
+		Code: code,
+		Data: nil,
+		Msg:  message,
+	})
+}
+func FailWithMes(data string, message string, c *gin.Context) {
 	Result(ERROR, data, message, c)
 }
