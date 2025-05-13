@@ -52,7 +52,7 @@ func (P *ProductUserService) SelectCoupon(UserId uint, ConponCode string) (res d
 	type checkout struct {
 		UserId               uint
 		UsedPoints           int
-		PointsDiscountAmount int
+		PointsDiscountAmount float64
 		ShippingFee          float64
 	}
 	var session checkout
@@ -83,12 +83,17 @@ func (P *ProductUserService) SelectCoupon(UserId uint, ConponCode string) (res d
 	if err != nil {
 		return res, ErrConponNotFound
 	}
-	//active忘了，这个是时间
+	//active
+	if !coupon.IsActive {
+		return res, ErrCouponInvalid
+	}
 	if time.Now().After(coupon.EndDate) || time.Now().Before(coupon.StartDate) {
 		return res, ErrCouponExpired
 	}
 	//金额
-
+	if session.PointsDiscountAmount < coupon.MinPurchaseAccount {
+		return res, ErrCouponMinPurchaseNotMet
+	}
 	// var count int64
 	// err = db.Table("conpons").
 	// 	Select("conpon_code").
