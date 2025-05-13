@@ -1,4 +1,4 @@
-name: Build and Push Docker image to Amazon ECR Public
+name: Build and Push Docker images to Amazon ECR Public
 
 on:
   push:
@@ -7,6 +7,8 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REGISTRY: public.ecr.aws/z4v1g2p5
+  FRONTEND_REPOSITORY: gin-vue-admin-frontend
+  BACKEND_REPOSITORY: gin-vue-admin-backend
   IMAGE_TAG: latest
 
 jobs:
@@ -28,20 +30,14 @@ jobs:
         run: |
           aws ecr-public get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
 
-      - name: Build and Push Backend Docker image
-        run: |
-          cd server
-          docker build -t $ECR_REGISTRY/gin-vue-admin-backend:$IMAGE_TAG -f Dockerfile .
-          docker push $ECR_REGISTRY/gin-vue-admin-backend:$IMAGE_TAG
-
-      - name: Build and Push Frontend Docker image
+      - name: Build and push frontend Docker image
         run: |
           cd web
-          docker build -t $ECR_REGISTRY/gin-vue-admin-frontend:$IMAGE_TAG -f Dockerfile .
-          docker push $ECR_REGISTRY/gin-vue-admin-frontend:$IMAGE_TAG
+          docker build -t $ECR_REGISTRY/$FRONTEND_REPOSITORY:$IMAGE_TAG -f Dockerfile .
+          docker push $ECR_REGISTRY/$FRONTEND_REPOSITORY:$IMAGE_TAG
 
-      - name: Build and Push Deploy Docker image
+      - name: Build and push backend Docker image
         run: |
-          cd deploy/docker
-          docker build -t $ECR_REGISTRY/gin-vue-admin-deploy:$IMAGE_TAG -f Dockerfile .
-          docker push $ECR_REGISTRY/gin-vue-admin-deploy:$IMAGE_TAG
+          cd server
+          docker build -t $ECR_REGISTRY/$BACKEND_REPOSITORY:$IMAGE_TAG -f Dockerfile .
+          docker push $ECR_REGISTRY/$BACKEND_REPOSITORY:$IMAGE_TAG
