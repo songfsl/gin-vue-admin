@@ -7,7 +7,8 @@
     "build": "vite build --mode production",
     "limit-build": "npm install increase-memory-limit-fixbug cross-env -g && npm run fix-memory-limit && node ./limit && npm run build",
     "preview": "vite preview",
-    "fix-memory-limit": "cross-env LIMIT=4096 increase-memory-limit"
+    "fix-memory-limit": "cross-env LIMIT=4096 increase-memory-limit",
+    "test": "jest"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
